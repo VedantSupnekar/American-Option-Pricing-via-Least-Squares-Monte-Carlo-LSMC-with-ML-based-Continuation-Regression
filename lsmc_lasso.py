@@ -97,7 +97,7 @@ if __name__ == "__main__":
     # too large and it zeroes out all coefficients → bad price
     print(f"{'alpha':>8}  {'price':>8}")
     print("-" * 20)
-    for a in [0.0001, 0.001, 0.01, 0.1]:
+    for a in [0.0001, 0.001, 0.01, 0.1, 1]:
         price = lsmc_american_put_lasso(S0, K, T, r, sigma, N, paths, degree=2, alpha=a, seed=42)
         print(f"{a:>8.4f}  {price:>8.4f}")
 
