@@ -33,7 +33,9 @@ This project prices American put options using the **Longstaff–Schwartz Monte 
 ├── output/                       # Experiment results & figures (gitignored)
 │   ├── *.csv
 │   └── figures/
-├── docs/                         # Project proposal and documentation
+├── docs/                         # Project deliverables
+│   ├── AmericanOptionPricingLSMC_Report.pdf
+│   ├── OptionPricing_LSMC_ML_Presentation.pdf
 │   └── Proposal_...pdf
 ├── requirements.txt
 └── README.md
@@ -64,6 +66,14 @@ python scripts/run_experiments.py hyperparam   # Hyperparameter sensitivity
 python scripts/run_experiments.py runtime      # Runtime comparison
 python scripts/run_experiments.py optparams    # Option parameter variation
 ```
+
+## Documents
+
+| Document | Description |
+|---|---|
+| [Final Report](docs/AmericanOptionPricingLSMC_Report.pdf) | Full project report — background, methodology, experiments, and results |
+| [Presentation](docs/OptionPricing_LSMC_ML_Presentation.pdf) | Slide deck summarizing the project |
+| [Proposal](docs/Proposal_%20American%20Option%20Pricing%20via%20Least-Squares%20Monte%20Carlo%20(LSMC)%20with%20ML%20based%20Continuation%20Regression%20-%20Google%20Slides.pdf) | Original project proposal |
 
 ## Reference
 
