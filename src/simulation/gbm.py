@@ -8,7 +8,7 @@ sigma = 0.2    # Volatility
 T = 1.0        # Time to maturity (1 year)
 dt = 0.02      # Time step (e.g., 50 intervals per year)
 N = int(T / dt) # Number of time steps
-paths = 10     # Number of simulated paths
+paths = 100     # Number of simulated paths
 
 
 np.random.seed(42)
@@ -26,6 +26,9 @@ for t in range(1, N + 1):
     # GBM formula
     S[t] = S[t-1] * np.exp((r - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * Z)
 
+# Print the last prices to check them immediately
+print("Final prices of the first 5 paths:", S[-1, :5])
+
 # Plot the simulated paths to see if they look correct
 plt.figure(figsize=(10, 6))
 plt.plot(S)
@@ -34,6 +37,3 @@ plt.xlabel('Time Steps')
 plt.ylabel('Asset Price')
 plt.grid(True)
 plt.show()
-
-# Print the last prices to check them
-print("Final prices of the first 5 paths:", S[-1, :5])

@@ -3,20 +3,27 @@
 # simulated paths and produces a comparison table.
 #
 # Usage:
-#   python3 run_comparison.py
+#   python3 scripts/run_comparison.py
 
+import sys
+import os
 import time
 import numpy as np
-import os
+
+# allow imports from repo root
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 # import all pricers
-from lsmc import lsmc_american_put
-from lsmc_ridge import lsmc_american_put_ridge
-from lsmc_lasso import lsmc_american_put_lasso
-from lsmc_random_forest import lsmc_american_put_rf
-from lsmc_gradient_boosting import lsmc_american_put_gb
+from src.pricers import (
+    lsmc_american_put,
+    lsmc_american_put_ridge,
+    lsmc_american_put_lasso,
+    lsmc_american_put_rf,
+    lsmc_american_put_gb,
+)
 
 
+OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "output")
 
 DEFAULT_PARAMS = dict(
     S0=36.0,
@@ -79,13 +86,14 @@ def run_all(paths=100_000, save_csv=False):
     print(f"Benchmark (L&S 2001): {BENCHMARK_PRICE:.3f}\n")
 
     if save_csv:
-        os.makedirs("results", exist_ok=True)
+        os.makedirs(OUTPUT_DIR, exist_ok=True)
         import csv
-        with open("results/comparison.csv", "w", newline="") as f:
+        csv_path = os.path.join(OUTPUT_DIR, "comparison.csv")
+        with open(csv_path, "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=results[0].keys())
             writer.writeheader()
             writer.writerows(results)
-        print("Saved → results/comparison.csv")
+        print(f"Saved → {csv_path}")
 
     return results
 

@@ -1,9 +1,9 @@
-# plots.py
-# Generate all visualizations from the experiment CSVs in results/.
+# generate_plots.py
+# Generate all visualizations from the experiment CSVs in output/.
 #
 # Usage:
-#   python3 plots.py              # generate all plots
-#   python3 plots.py convergence  # generate just one
+#   python3 scripts/generate_plots.py              # generate all plots
+#   python3 scripts/generate_plots.py convergence  # generate just one
 
 import os
 import sys
@@ -11,13 +11,16 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 
-RESULTS_DIR = "results"
-FIGURES_DIR = os.path.join(RESULTS_DIR, "figures")
+# allow imports from repo root
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "output")
+FIGURES_DIR = os.path.join(OUTPUT_DIR, "figures")
 BENCHMARK = 4.478
 
 
 def load_csv(filename):
-    path = os.path.join(RESULTS_DIR, filename)
+    path = os.path.join(OUTPUT_DIR, filename)
     if not os.path.exists(path):
         print(f"  ⚠ {path} not found — run the experiment first")
         return None
@@ -80,7 +83,7 @@ def plot_convergence():
     if not data: return
 
     fig, ax = plt.subplots(figsize=(8, 5))
-    methods_set = dict.fromkeys(r["method"] for r in data)  # ordered unique
+    methods_set = dict.fromkeys(r["method"] for r in data)
 
     for method in methods_set:
         subset = [r for r in data if r["method"] == method]
@@ -107,7 +110,6 @@ def plot_hyperparam():
     data = load_csv("hyperparam_sweep.csv")
     if not data: return
 
-    # group by (method, param)
     groups = {}
     for r in data:
         key = (r["method"], r["param"])
@@ -131,7 +133,6 @@ def plot_hyperparam():
             axes[i].set_xscale("log")
         axes[i].grid(True, alpha=0.3)
 
-    # hide unused axes
     for j in range(i + 1, len(axes)):
         axes[j].set_visible(False)
 
@@ -152,21 +153,58 @@ def plot_runtime():
     prices  = [float(r["price"]) for r in data]
     times   = [float(r["avg_time_s"]) for r in data]
     errors  = [float(r["std_time_s"]) for r in data]
+    abs_errs = [abs(p - BENCHMARK) for p in prices]
 
-    fig, ax = plt.subplots(figsize=(8, 5))
-    colors = plt.cm.Set2(np.linspace(0, 1, len(methods)))
+    markers = ["o", "s", "D", "^", "v", "P", "*", "X"]
+    cmap = plt.cm.tab10
+    offsets = [(10, 8), (10, -14), (10, 18), (10, 8), (10, -14)]
 
-    for i, (m, t, p) in enumerate(zip(methods, times, prices)):
-        ax.scatter(t, abs(p - BENCHMARK), s=120, color=colors[i], edgecolors="black",
-                   linewidth=0.5, zorder=3)
-        ax.annotate(m, (t, abs(p - BENCHMARK)), textcoords="offset points",
-                    xytext=(8, 4), fontsize=9)
+    fig, ax = plt.subplots(figsize=(10, 6))
 
-    ax.set_xlabel("Avg Runtime (seconds)")
-    ax.set_ylabel("|Price Error| vs Benchmark")
-    ax.set_title("Accuracy vs Speed Tradeoff")
-    ax.grid(True, alpha=0.3)
-    fig.tight_layout()
+    for i, (m, t, err) in enumerate(zip(methods, times, abs_errs)):
+        ax.scatter(t, err, s=160, color=cmap(i), edgecolors="black",
+                   linewidth=0.8, zorder=3, marker=markers[i % len(markers)],
+                   label=m)
+        ox, oy = offsets[i % len(offsets)]
+        ax.annotate(m, (t, err), textcoords="offset points",
+                    xytext=(ox, oy), fontsize=10, fontweight="bold",
+                    arrowprops=dict(arrowstyle="-", color="gray", lw=0.8))
+
+    ax.set_xlabel("Avg Runtime (seconds)", fontsize=11)
+    ax.set_ylabel("|Price Error| vs Benchmark", fontsize=11)
+    ax.set_title("Accuracy vs Speed Tradeoff", fontsize=13, fontweight="bold")
+    ax.set_xscale("log")
+    ax.grid(True, alpha=0.3, which="both")
+    ax.legend(loc="upper left", fontsize=9, framealpha=0.9)
+
+    close_idx = [i for i, t in enumerate(times) if t < 1.0]
+    if len(close_idx) >= 2:
+        from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset
+
+        axins = ax.inset_axes([0.28, 0.55, 0.33, 0.35])
+
+        for i in close_idx:
+            axins.scatter(times[i], abs_errs[i], s=180,
+                          color=cmap(i), edgecolors="black", linewidth=0.8,
+                          marker=markers[i % len(markers)], zorder=3)
+            axins.annotate(methods[i], (times[i], abs_errs[i]),
+                           textcoords="offset points", xytext=(8, 6),
+                           fontsize=9, fontweight="bold")
+
+        t_vals = [times[i] for i in close_idx]
+        e_vals = [abs_errs[i] for i in close_idx]
+        t_pad = (max(t_vals) - min(t_vals)) * 0.4 + 0.02
+        e_pad = (max(e_vals) - min(e_vals)) * 0.6 + 0.002
+        axins.set_xlim(min(t_vals) - t_pad, max(t_vals) + t_pad)
+        axins.set_ylim(min(e_vals) - e_pad, max(e_vals) + e_pad)
+        axins.set_title("Zoom: Linear Models", fontsize=9, fontstyle="italic")
+        axins.grid(True, alpha=0.3)
+        axins.tick_params(labelsize=8)
+
+        mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="0.5",
+                   linestyle="--", linewidth=0.8)
+
+    fig.subplots_adjust(left=0.1, right=0.95, top=0.92, bottom=0.12)
     save(fig, "runtime_tradeoff.png")
 
 
@@ -181,7 +219,6 @@ def plot_option_params():
     scenarios = list(dict.fromkeys(r["scenario"] for r in data))
     methods   = list(dict.fromkeys(r["method"] for r in data))
 
-    # build matrix
     matrix = np.zeros((len(scenarios), len(methods)))
     for r in data:
         i = scenarios.index(r["scenario"])
@@ -196,7 +233,6 @@ def plot_option_params():
     ax.set_yticks(range(len(scenarios)))
     ax.set_yticklabels(scenarios, fontsize=9)
 
-    # annotate cells
     for i in range(len(scenarios)):
         for j in range(len(methods)):
             ax.text(j, i, f"{matrix[i, j]:.2f}", ha="center", va="center", fontsize=9)
